@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "bun:test";
 import { Agent, type AgentMessage } from "@oh-my-pi/pi-agent-core";
+import type { Model } from "@oh-my-pi/pi-ai";
 import { AsyncJobManager } from "@oh-my-pi/pi-coding-agent/async/job-manager";
 import { Settings } from "@oh-my-pi/pi-coding-agent/config/settings";
 import { IrcBus } from "@oh-my-pi/pi-coding-agent/irc/bus";
@@ -79,7 +80,7 @@ function createRealSession(overrides: Record<string, unknown> = {}): {
 		}),
 		sessionManager,
 		settings: Settings.isolated({ "compaction.enabled": false, ...overrides }),
-		modelRegistry: {} as never,
+		modelRegistry: { fitContextWindow: (model: Model) => model } as never,
 	});
 	return { session, sessionManager };
 }
@@ -692,6 +693,15 @@ describe("IRC", () => {
 				["0-A", "d-1"],
 				["0-B", "d-2"],
 			]);
+		});
+
+		it("does not relay a turn woken only by a progress note back to its sender", async () => {
+			const sender = makeFakeSession();
+			registry.register({ id: "0-C", displayName: "task", kind: "sub", status: "idle", session: sender.session });
+			const peer = registerIdleSubagent("0-A");
+			peer.wake([incoming("p-1", "0-C", { progress: true })]);
+			await peer.settled();
+			expect(sender.delivered).toEqual([]);
 		});
 	});
 

@@ -106,10 +106,6 @@ describe("AgentSession advisor context maintenance", () => {
 				return primaryMock.stream(model, context, options);
 			},
 		});
-		if (workerModelsPath) {
-			// Match the SDK's adoption boundary while keeping this fixture offline.
-			agent.setModelResolver(model => modelRegistry.fitContextWindow(model, settings, "standard-only"));
-		}
 		session = new AgentSession({
 			agent,
 			sessionManager: SessionManager.inMemory(),
